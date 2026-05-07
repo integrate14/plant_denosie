@@ -87,15 +87,45 @@ def earth_movers_distance_np(points1: np.ndarray, points2: np.ndarray) -> float:
     return np.mean(np.sqrt(np.sum((points1 - points2) ** 2, axis=-1)))
 
 
+def geometric_recall_np(pred_points: np.ndarray, clean_points: np.ndarray, threshold: float = 0.01) -> float:
+    """
+    计算几何召回率 (Geometric Recall)
+    
+    定义：对于预测点云中的每个点，在干净点云中找到最近邻，
+    若最近邻距离 <= threshold，则认为该点被"成功召回"。
+    几何召回率 = 被召回点数 / 总点数
+    
+    Args:
+        pred_points:  (N, 3) 预测（去噪后）点云
+        clean_points: (M, 3) 干净目标点云
+        threshold:    判定召回的距离阈值（默认 0.01，归一化坐标空间）
+    
+    Returns:
+        几何召回率，取值 [0, 1]，越高越好
+    """
+    # 计算 pred_points 中每个点到 clean_points 的最近邻距离
+    diff = pred_points[:, np.newaxis, :] - clean_points[np.newaxis, :, :]   # (N, M, 3)
+    dist = np.sqrt(np.sum(diff ** 2, axis=-1))                               # (N, M)
+    min_dist = np.min(dist, axis=1)                                          # (N,)
+    recalled = np.sum(min_dist <= threshold)
+    return float(recalled) / float(len(pred_points))
+
+
 class PointCloudMetrics:
     """点云评估指标计算器"""
     
-    def __init__(self):
+    def __init__(self, recall_threshold: float = 0.01):
+        """
+        Args:
+            recall_threshold: 几何召回率判定阈值（默认 0.01）
+        """
+        self.recall_threshold = recall_threshold
         self.metrics = {
             'chamfer_distance': [],
             'hausdorff_distance': [],
             'point_to_point_distance': [],
-            'earth_movers_distance': []
+            'earth_movers_distance': [],
+            'geometric_recall': []
         }
         
     def compute(self, pred_points: np.ndarray, clean_points: np.ndarray) -> Dict[str, float]:
@@ -115,6 +145,8 @@ class PointCloudMetrics:
         results['hausdorff_distance'] = np.sqrt(hausdorff_distance_np(pred_points, clean_points))
         results['point_to_point_distance'] = point_to_point_distance_np(pred_points, clean_points)
         results['earth_movers_distance'] = earth_movers_distance_np(pred_points, clean_points)
+        results['geometric_recall'] = geometric_recall_np(pred_points, clean_points,
+                                                          threshold=self.recall_threshold)
         
         return results
     
