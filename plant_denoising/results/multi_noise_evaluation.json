@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-05-08T10:08:25.107348",
+  "test_set_size": 8,
+  "noise_levels": [
+    0.01,
+    0.02,
+    0.05
+  ],
+  "noisy_baselines": {
+    "0.01": {
+      "CD": 0.02714877761900425,
+      "P2P": 0.02797023206949234
+    },
+    "0.02": {
+      "CD": 0.05564608424901962,
+      "P2P": 0.06076633371412754
+    },
+    "0.05": {
+      "CD": 0.11496482416987419,
+      "P2P": 0.14343201369047165
+    }
+  },
+  "results": {
+    "0.01": {
+      "PointFilter": {
+        "Chamfer Distance": 0.0021123980404809117,
+        "P2P Distance": 0.03133436292409897,
+        "Geometric Recall": 0.011474609375
+      },
+      "IterativePFN": {
+        "Chamfer Distance": 0.0015274383476935327,
+        "P2P Distance": 0.03167152777314186,
+        "Geometric Recall": 0.0697021484375
+      },
+      "StraightPCF": {
+        "Chamfer Distance": 0.007158022373914719,
+        "P2P Distance": 0.07275497540831566,
+        "Geometric Recall": 0.00701904296875
+      }
+    },
+    "0.02": {
+      "PointFilter": {
+        "Chamfer Distance": 0.0019136627670377493,
+        "P2P Distance": 0.03174559026956558,
+        "Geometric Recall": 0.04522705078125
+      },
+      "IterativePFN": {
+        "Chamfer Distance": 0.0019180611707270145,
+        "P2P Distance": 0.03762829676270485,
+        "Geometric Recall": 0.04052734375
+      },
+      "StraightPCF": {
+        "Chamfer Distance": 0.008337593637406826,
+        "P2P Distance": 0.06943605095148087,
+        "Geometric Recall": 0.00372314453125
+      }
+    },
+    "0.05": {
+      "PointFilter": {
+        "Chamfer Distance": 0.019280864857137203,
+        "P2P Distance": 0.10627572983503342,
+        "Geometric Recall": 0.001708984375
+      },
+      "IterativePFN": {
+        "Chamfer Distance": 0.003622220130637288,
+        "P2P Distance": 0.07975134626030922,
+        "Geometric Recall": 0.01904296875
+      },
+      "StraightPCF": {
+        "Chamfer Distance": 0.03364556096494198,
+        "P2P Distance": 0.1601533144712448,
+        "Geometric Recall": 0.0008544921875
+      }
+    }
+  }
+}
