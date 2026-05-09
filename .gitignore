@@ -1,0 +1,80 @@
+# ========== Python ==========
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# ========== Virtual environments ==========
+venv/
+ENV/
+env/
+.venv/
+
+# ========== PyTorch / checkpoints ==========
+*.pth
+**/checkpoints/
+
+# ========== Jupyter ==========
+.ipynb_checkpoints/
+
+# ========== IDE ==========
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========== OS ==========
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========== Large data files ==========
+*.ply
+Crops3D/
+**/*.pkl
+**/*.npz
+**/*.h5
+
+# ========== Log files ==========
+*.log
+**/train_log.txt
+
+# ========== Output artifacts ==========
+**/*.png
+**/*.pdf
+**/visualizations/
+
+# ========== Data & result artifacts (keep small json files) ==========
+**/results/*.png
+**/results/*.pdf
+**/results/visualizations/
+
+# ========== WorkBuddy ==========
+.workbuddy/
+
+# ========== Memory / temp files ==========
+*.jsonl
+__pycache__/
+*.pyc
+*.pyo
+
+# ========== System directories ==========
+NVIDIA Corporation/

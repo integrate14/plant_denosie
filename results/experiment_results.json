@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-05-07T15:00:00",
+  "dataset": "synthetic (sphere)",
+  "noise_level": 0.02,
+  "threshold": 0.04,
+  "models": {
+    "PointFilter": {
+      "chamfer": 0.0017990961205214262,
+      "p2p": 0.03140093144029379,
+      "geometric_recall": 1.0
+    },
+    "IterativePFN": {
+      "chamfer": 0.0018803081009536981,
+      "p2p": 0.03274317719042301,
+      "geometric_recall": 1.0
+    },
+    "StraightPCF": {
+      "chamfer": 0.008782481076195836,
+      "p2p": 0.07277573719620704,
+      "geometric_recall": 0.999951171875
+    },
+    "Bilateral": {
+      "chamfer": 0.006703013833612203,
+      "p2p": 0.06044060848653317,
+      "geometric_recall": 1.0
+    },
+    "Laplacian": {
+      "chamfer": null,
+      "p2p": null,
+      "geometric_recall": 0.0
+    }
+  }
+}

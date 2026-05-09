@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-05-07T18:10:00.236718",
+  "dataset_split": {
+    "train": 35,
+    "val": 7,
+    "test": 8
+  },
+  "results": {
+    "PointFilter": {
+      "Chamfer Distance": 0.0019523532828316092,
+      "P2P Distance": 0.031985094770789146,
+      "Geometric Recall": 0.04461669921875
+    },
+    "IterativePFN": {
+      "Chamfer Distance": 0.004488017642870545,
+      "P2P Distance": 0.08765827119350433,
+      "Geometric Recall": 0.01666259765625
+    },
+    "StraightPCF": {
+      "Chamfer Distance": 0.007783676730468869,
+      "P2P Distance": 0.06660217978060246,
+      "Geometric Recall": 0.00469970703125
+    }
+  }
+}

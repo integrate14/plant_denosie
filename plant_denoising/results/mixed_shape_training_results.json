@@ -1,0 +1,178 @@
+{
+  "timestamp": "2026-05-08T13:50:45.556485",
+  "training_type": "mixed_shape",
+  "shapes": [
+    "sphere",
+    "cube",
+    "cone"
+  ],
+  "noise_level": 0.02,
+  "num_epochs": 30,
+  "dataset_info": {
+    "samples_per_shape": 50,
+    "total_samples_mixed": 150,
+    "split": "70/15/15"
+  },
+  "training_summary": {
+    "PointFilter": {
+      "best_val_loss": 0.004356500382224719,
+      "loaded": true
+    },
+    "IterativePFN": {
+      "best_val_loss": 0.010577335643271605,
+      "loaded": true
+    },
+    "StraightPCF": {
+      "best_val_loss": 0.0056638119276613,
+      "history_len": 30
+    }
+  },
+  "evaluation": {
+    "PointFilter": {
+      "sphere": {
+        "Chamfer Distance": 0.005101735237985849,
+        "P2P Distance": 0.04985553026199341,
+        "Geometric Recall": 0.0072021484375,
+        "test_samples": 1
+      },
+      "cube": {
+        "Chamfer Distance": 0.0007784001063555479,
+        "P2P Distance": 0.02014794573187828,
+        "Geometric Recall": 0.14581298828125,
+        "test_samples": 1
+      },
+      "cone": {
+        "Chamfer Distance": 0.001215627184137702,
+        "P2P Distance": 0.026838792487978935,
+        "Geometric Recall": 0.102294921875,
+        "test_samples": 1
+      }
+    },
+    "IterativePFN": {
+      "sphere": {
+        "Chamfer Distance": 0.0044549452140927315,
+        "P2P Distance": 0.06692546606063843,
+        "Geometric Recall": 0.01348876953125,
+        "test_samples": 1
+      },
+      "cube": {
+        "Chamfer Distance": 0.0025273747742176056,
+        "P2P Distance": 0.07859906554222107,
+        "Geometric Recall": 0.034912109375,
+        "test_samples": 1
+      },
+      "cone": {
+        "Chamfer Distance": 0.0036334034521132708,
+        "P2P Distance": 0.07061395794153214,
+        "Geometric Recall": 0.03363037109375,
+        "test_samples": 1
+      }
+    },
+    "StraightPCF": {
+      "sphere": {
+        "Chamfer Distance": 0.006797653157263994,
+        "P2P Distance": 0.060962218791246414,
+        "Geometric Recall": 0.00152587890625,
+        "test_samples": 1
+      },
+      "cube": {
+        "Chamfer Distance": 0.0007495109457522631,
+        "P2P Distance": 0.020205985754728317,
+        "Geometric Recall": 0.1436767578125,
+        "test_samples": 1
+      },
+      "cone": {
+        "Chamfer Distance": 0.0012632659636437893,
+        "P2P Distance": 0.029030997306108475,
+        "Geometric Recall": 0.087646484375,
+        "test_samples": 1
+      }
+    }
+  },
+  "stability_analysis": {
+    "PointFilter": {
+      "mean_cd": 0.0023652541761597,
+      "std_cd": 0.0019431998234332223,
+      "mean_p2p": 0.032280756160616875,
+      "std_p2p": 0.012723898016834757,
+      "best_shape": "cube",
+      "worst_shape": "sphere",
+      "per_shape": {
+        "sphere": {
+          "Chamfer Distance": 0.005101735237985849,
+          "P2P Distance": 0.04985553026199341,
+          "Geometric Recall": 0.0072021484375,
+          "test_samples": 1
+        },
+        "cube": {
+          "Chamfer Distance": 0.0007784001063555479,
+          "P2P Distance": 0.02014794573187828,
+          "Geometric Recall": 0.14581298828125,
+          "test_samples": 1
+        },
+        "cone": {
+          "Chamfer Distance": 0.001215627184137702,
+          "P2P Distance": 0.026838792487978935,
+          "Geometric Recall": 0.102294921875,
+          "test_samples": 1
+        }
+      }
+    },
+    "IterativePFN": {
+      "mean_cd": 0.0035385744801412025,
+      "std_cd": 0.0007897790199855721,
+      "mean_p2p": 0.07204616318146388,
+      "std_p2p": 0.004872141219974887,
+      "best_shape": "cube",
+      "worst_shape": "sphere",
+      "per_shape": {
+        "sphere": {
+          "Chamfer Distance": 0.0044549452140927315,
+          "P2P Distance": 0.06692546606063843,
+          "Geometric Recall": 0.01348876953125,
+          "test_samples": 1
+        },
+        "cube": {
+          "Chamfer Distance": 0.0025273747742176056,
+          "P2P Distance": 0.07859906554222107,
+          "Geometric Recall": 0.034912109375,
+          "test_samples": 1
+        },
+        "cone": {
+          "Chamfer Distance": 0.0036334034521132708,
+          "P2P Distance": 0.07061395794153214,
+          "Geometric Recall": 0.03363037109375,
+          "test_samples": 1
+        }
+      }
+    },
+    "StraightPCF": {
+      "mean_cd": 0.0029368100222200155,
+      "std_cd": 0.0027380733298756317,
+      "mean_p2p": 0.03673306728402773,
+      "std_p2p": 0.017507313601089043,
+      "best_shape": "cube",
+      "worst_shape": "sphere",
+      "per_shape": {
+        "sphere": {
+          "Chamfer Distance": 0.006797653157263994,
+          "P2P Distance": 0.060962218791246414,
+          "Geometric Recall": 0.00152587890625,
+          "test_samples": 1
+        },
+        "cube": {
+          "Chamfer Distance": 0.0007495109457522631,
+          "P2P Distance": 0.020205985754728317,
+          "Geometric Recall": 0.1436767578125,
+          "test_samples": 1
+        },
+        "cone": {
+          "Chamfer Distance": 0.0012632659636437893,
+          "P2P Distance": 0.029030997306108475,
+          "Geometric Recall": 0.087646484375,
+          "test_samples": 1
+        }
+      }
+    }
+  }
+}
