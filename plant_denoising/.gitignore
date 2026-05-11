@@ -1,0 +1,37 @@
+# 模型检查点 - 不上传到 GitHub
+checkpoints/
+
+# 训练日志
+*.log
+*.log.*
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# PyTorch 缓存
+torch_cache/
+*.pth
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 数据文件（大文件）
+*.pkl
+*.npy
+*.npz
+*.ply
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
