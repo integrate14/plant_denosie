@@ -139,12 +139,16 @@ device = 'cpu'
 # ============================================================
 # 训练函数
 # ============================================================
-def compute_loss(model, cleaned, clean, model_name):
+def compute_loss(model, cleaned, clean, model_name, noisy=None):
     """根据模型类型计算损失函数"""
     if model_name == 'PointFilter':
         return model.get_loss(cleaned, clean)
     elif model_name == 'IterativePFN':
-        return model.get_loss(cleaned, clean)  # 关键：使用 cleaned 输出计算 loss
+        # 使用迭代损失（需要 noisy 作为输入）
+        if noisy is not None:
+            return model.get_iterative_loss(noisy, clean)
+        else:
+            return model.get_loss(cleaned, clean)
     elif model_name == 'StraightPCF':
         cd = model.chamfer_distance(cleaned, clean)
         ptp = torch.mean(torch.sqrt(torch.sum((cleaned - clean)**2, dim=-1) + 1e-8))
@@ -189,11 +193,15 @@ def train_model(model, train_loader, val_loader, num_epochs, model_name, save_su
             noisy, clean = noisy.to(device), clean.to(device)
             optimizer.zero_grad()
 
-            cleaned = model(noisy)
-            if isinstance(cleaned, tuple):
-                cleaned = cleaned[0]
+            if model_name == 'IterativePFN':
+                # IterativePFN 使用迭代损失
+                loss = model.get_iterative_loss(noisy, clean)
+            else:
+                cleaned = model(noisy)
+                if isinstance(cleaned, tuple):
+                    cleaned = cleaned[0]
+                loss = compute_loss(model, cleaned, clean, model_name)
 
-            loss = compute_loss(model, cleaned, clean, model_name)
             loss.backward()
             optimizer.step()
 
@@ -214,11 +222,14 @@ def train_model(model, train_loader, val_loader, num_epochs, model_name, save_su
                     noisy, clean = batch
                 noisy, clean = noisy.to(device), clean.to(device)
 
-                cleaned = model(noisy)
-                if isinstance(cleaned, tuple):
-                    cleaned = cleaned[0]
+                if model_name == 'IterativePFN':
+                    loss = model.get_iterative_loss(noisy, clean)
+                else:
+                    cleaned = model(noisy)
+                    if isinstance(cleaned, tuple):
+                        cleaned = cleaned[0]
+                    loss = compute_loss(model, cleaned, clean, model_name)
 
-                loss = compute_loss(model, cleaned, clean, model_name)
                 val_loss += loss.item()
                 n_val += 1
 
@@ -326,9 +337,11 @@ def evaluate_per_shape(model, data, shapes, noise_level, loader_fn=None, model_n
                 cd = model.chamfer_distance(cleaned, clean)
                 p2p = torch.mean(torch.sqrt(torch.sum((cleaned - clean)**2, dim=-1) + 1e-8))
                 
-                dists = torch.cdist(cleaned, clean)
-                min_dists, _ = torch.min(dists, dim=2)
-                gr = torch.mean((min_dists < 0.01).float())
+                # 修复 GR 计算: dim=0 (Recall方向), THRESHOLD=2*noise_level
+                threshold = 2 * noise_level
+                dist_l2 = torch.cdist(cleaned, clean)
+                min_dist_per_clean, _ = torch.min(dist_l2, dim=0)
+                gr = (min_dist_per_clean <= threshold).float().mean()
 
                 total_cd += cd.item()
                 total_p2p += p2p.item()
@@ -356,13 +369,13 @@ print('PHASE 1: TRAINING (Mixed Shapes)')
 print('='*70)
 
 models_to_train = {
-    'PointFilter': lambda: create_pointfilter_model(num_points=2048),
     'IterativePFN': lambda: create_iterativepfn_improved_model(
         num_points=2048, num_iterations=3, feature_dim=256, hidden_dim=128
     ),
-    'StraightPCF': lambda: create_straightpcf_improved_model(
-        num_points=2048, feature_dim=256, hidden_dim=128
-    ),
+    # 'PointFilter': lambda: create_pointfilter_model(num_points=2048),
+    # 'StraightPCF': lambda: create_straightpcf_improved_model(
+    #     num_points=2048, feature_dim=256, hidden_dim=128
+    # ),
 }
 
 trained_models = {}

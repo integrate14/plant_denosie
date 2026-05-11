@@ -62,36 +62,52 @@ class PointWiseAttention(nn.Module):
 
 
 class SimplePointNet(nn.Module):
-    """简化的PointNet特征提取器 (增强版 - 更深的网络)"""
-    
+    """简化的PointNet特征提取器 (LayerNorm版 - 替换BatchNorm)
+
+    LayerNorm: 对每个样本的每个点，在 channel 维度做归一化。
+    不依赖 batch 内其他样本的统计量，适合混合形状训练。
+    """
+
     def __init__(self, feature_dim: int = 512):
         super(SimplePointNet, self).__init__()
-        
+
         self.conv1 = nn.Conv1d(3, 64, 1)
         self.conv2 = nn.Conv1d(64, 128, 1)
         self.conv3 = nn.Conv1d(128, 256, 1)
         self.conv4 = nn.Conv1d(256, feature_dim, 1)
-        
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(256)
-        self.bn4 = nn.BatchNorm1d(feature_dim)
-        
+
+        # LayerNorm: 归一化通道维度 (C)，对 Conv1d 输出 (B,C,N) 的每列归一化
+        self.ln1 = nn.LayerNorm(64)
+        self.ln2 = nn.LayerNorm(128)
+        self.ln3 = nn.LayerNorm(256)
+        self.ln4 = nn.LayerNorm(feature_dim)
+
     def forward(self, x):
         """
         Args:
             x: (B, 3, N)
         Returns:
-            features: (B, feature_dim, N)
+            features:    (B, feature_dim, N)
             global_feat: (B, feature_dim)
         """
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = F.relu(self.bn4(self.conv4(x)))
-        
-        global_feat = torch.max(x, dim=2, keepdim=False)[0]
-        
+        # conv -> transpose -> LN -> transpose back -> ReLU
+        x = self.conv1(x)                       # (B, 64, N)
+        x = self.ln1(x.transpose(2, 1))         # (B, N, 64)
+        x = x.transpose(2, 1).relu()           # (B, 64, N)
+
+        x = self.conv2(x)                       # (B, 128, N)
+        x = self.ln2(x.transpose(2, 1))         # (B, N, 128)
+        x = x.transpose(2, 1).relu()           # (B, 128, N)
+
+        x = self.conv3(x)                       # (B, 256, N)
+        x = self.ln3(x.transpose(2, 1))         # (B, N, 256)
+        x = x.transpose(2, 1).relu()           # (B, 256, N)
+
+        x = self.conv4(x)                       # (B, feature_dim, N)
+        x = self.ln4(x.transpose(2, 1))         # (B, N, feature_dim)
+        x = x.transpose(2, 1).relu()           # (B, feature_dim, N)
+
+        global_feat = torch.max(x, dim=2, keepdim=False)[0]  # (B, feature_dim)
         return x, global_feat
 
 
@@ -107,18 +123,12 @@ class IterationModule(nn.Module):
         self.attention = PointWiseAttention(feature_dim)
         
         # feature_dim + 3 + 1 (features + points + iter_embed)
-        self.mlp = nn.Sequential(
-            nn.Linear(feature_dim + 3 + 1, hidden_dim),
-            nn.ReLU(),
-            nn.BatchNorm1d(hidden_dim),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.BatchNorm1d(hidden_dim),
-            nn.Linear(hidden_dim, 3)
-        )
+        self.fc1 = nn.Linear(feature_dim + 3 + 1, hidden_dim)
+        self.ln1 = nn.LayerNorm(hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.ln2 = nn.LayerNorm(hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, 3)
         
-        # 残差连接
-        self.residual_weight = nn.Parameter(torch.tensor(0.5))
         
     def forward(self, points, iteration):
         """
@@ -140,12 +150,20 @@ class IterationModule(nn.Module):
         
         # 迭代嵌入
         iter_embed = torch.full((batch_size, num_points, 1), iteration / 5.0, device=points.device)
-        
-        concat = torch.cat([features, points, iter_embed], dim=-1)
-        concat = concat.view(batch_size * num_points, -1)
-        
-        displacements = self.mlp(concat)
-        displacements = displacements.view(batch_size, num_points, 3)
+
+        concat = torch.cat([features, points, iter_embed], dim=-1)  # (B, N, F)
+        concat = concat.view(batch_size * num_points, -1)            # (B*N, F)
+
+        x = self.fc1(concat)                                         # (B*N, hidden_dim)
+        x = self.ln1(x.view(batch_size, num_points, -1))            # (B, N, hidden_dim)
+        x = F.relu(x.view(batch_size * num_points, -1))            # (B*N, hidden_dim)
+
+        x = self.fc2(x)                                             # (B*N, hidden_dim)
+        x = self.ln2(x.view(batch_size, num_points, -1))            # (B, N, hidden_dim)
+        x = F.relu(x.view(batch_size * num_points, -1))            # (B*N, hidden_dim)
+
+        displacements = self.fc3(x)                                  # (B*N, 3)
+        displacements = displacements.view(batch_size, num_points, 3) # (B, N, 3)
         
         return displacements
 
@@ -188,6 +206,7 @@ class IterativePFNImproved(nn.Module):
         ])
         
         self.adaptive_gt = AdaptiveGroundTruth()
+        self.residual_weight = nn.Parameter(torch.tensor(0.5))
         
     def forward(self, noisy_points, return_all_iterations: bool = False):
         """
@@ -203,7 +222,7 @@ class IterativePFNImproved(nn.Module):
         for i in range(self.num_iterations):
             displacements = self.iteration_modules[i](current_points, i)
             # 使用可学习的残差权重
-            current_points = current_points + displacements * 0.5
+            current_points = current_points + displacements * self.residual_weight
             all_points.append(current_points)
         
         if return_all_iterations:
@@ -226,7 +245,7 @@ class IterativePFNImproved(nn.Module):
         
         for i in range(self.num_iterations):
             displacements = self.iteration_modules[i](current_points, i)
-            current_points = current_points + displacements * 0.5
+            current_points = current_points + displacements * self.residual_weight
             
             # 每一步都计算损失
             step_cd = self.chamfer_distance(current_points, clean_points)

@@ -26,29 +26,20 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int):
         super(ResidualBlock, self).__init__()
         self.conv1 = nn.Conv1d(in_channels, out_channels, 1)
-        self.ln1   = nn.LayerNorm([out_channels])  # LN 在特征维度归一化
+        self.bn1   = nn.BatchNorm1d(out_channels)
         self.conv2 = nn.Conv1d(out_channels, out_channels, 1)
-        self.ln2   = nn.LayerNorm([out_channels])
+        self.bn2   = nn.BatchNorm1d(out_channels)
 
-        self.has_shortcut = (in_channels != out_channels)
-        if self.has_shortcut:
-            self.shortcut_conv = nn.Conv1d(in_channels, out_channels, 1)
+        self.shortcut = (
+            nn.Sequential(nn.Conv1d(in_channels, out_channels, 1),
+                          nn.BatchNorm1d(out_channels))
+            if in_channels != out_channels else nn.Identity()
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        residual = x
-        if self.has_shortcut:
-            residual = self.shortcut_conv(x)
-
-        x = self.conv1(x)  # (B, C, N)
-        x = self.ln1(x.transpose(2, 1)).transpose(2, 1)  # LN 在 (B,N,C) 上归一化 C 维度
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = self.ln2(x.transpose(2, 1)).transpose(2, 1)
-
-        # shortcut 也需要归一化（只在有shortcut时）
-        if self.has_shortcut:
-            residual = self.ln1(residual.transpose(2, 1)).transpose(2, 1)
-
+        residual = self.shortcut(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.bn2(self.conv2(x))
         return F.relu(x + residual)
 
 
@@ -67,7 +58,7 @@ class EnhancedPointNetExtractor(nn.Module):
     def __init__(self, input_dim: int = 3, feature_dim: int = 512):
         super(EnhancedPointNetExtractor, self).__init__()
         self.conv1 = nn.Conv1d(input_dim, 64, 1)
-        self.ln1   = nn.LayerNorm([64])  # LN 在特征维度归一化
+        self.bn1   = nn.BatchNorm1d(64)
 
         self.res1 = ResidualBlock(64, 128)
         self.res2 = ResidualBlock(128, 256)
@@ -81,9 +72,7 @@ class EnhancedPointNetExtractor(nn.Module):
             features:    (B, feature_dim, N)
             global_feat: (B, feature_dim)
         """
-        x = self.conv1(x)  # (B, 64, N)
-        x = self.ln1(x.transpose(2, 1)).transpose(2, 1)  # LN 在 (B,N,64) 上归一化特征维度
-        x = F.relu(x)
+        x = F.relu(self.bn1(self.conv1(x)))  # (B, 64, N)
         x = self.res1(x)   # (B, 128, N)
         x = self.res2(x)   # (B, 256, N)
         x = self.res3(x)   # (B, feature_dim, N)
@@ -118,7 +107,7 @@ class DGCNNFeatureExtractor(nn.Module):
     def _make_econv(in_dim: int, out_dim: int) -> nn.Sequential:
         return nn.Sequential(
             nn.Linear(in_dim, out_dim),
-            nn.LayerNorm([out_dim]),  # LN 替代 BN，batch_size=1 时稳定
+            nn.BatchNorm1d(out_dim),
             nn.ReLU(inplace=True),
         )
 
@@ -225,13 +214,13 @@ class VelocityModuleImproved(nn.Module):
         self.fusion_mlp = nn.Sequential(
             nn.Linear(feature_dim * 2, hidden_dim * 2),
             nn.ReLU(),
-            nn.LayerNorm([hidden_dim * 2]),  # LN 替代 BN，batch_size=1 时稳定
+            nn.BatchNorm1d(hidden_dim * 2),
             nn.Linear(hidden_dim * 2, hidden_dim),
             nn.ReLU(),
-            nn.LayerNorm([hidden_dim]),
+            nn.BatchNorm1d(hidden_dim),
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
-            nn.LayerNorm([hidden_dim // 2]),
+            nn.BatchNorm1d(hidden_dim // 2),
         )
 
         self.velocity_head = nn.Sequential(
@@ -283,13 +272,13 @@ class DistanceModuleImproved(nn.Module):
         self.global_mlp = nn.Sequential(
             nn.Linear(feature_dim * 2, hidden_dim * 2),
             nn.ReLU(),
-            nn.LayerNorm([hidden_dim * 2]),  # LN 替代 BN，batch_size=1 时稳定
+            nn.BatchNorm1d(hidden_dim * 2),
             nn.Linear(hidden_dim * 2, hidden_dim),
             nn.ReLU(),
-            nn.LayerNorm([hidden_dim]),
+            nn.BatchNorm1d(hidden_dim),
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
-            nn.LayerNorm([hidden_dim // 2]),
+            nn.BatchNorm1d(hidden_dim // 2),
             nn.Linear(hidden_dim // 2, 1),
             nn.Sigmoid(),
         )

@@ -81,10 +81,11 @@ def compute_metrics(pred, clean):
     # Point-to-Point Distance
     p2p = torch.mean(torch.sqrt(torch.sum((pred - clean) ** 2, dim=-1) + 1e-8))
 
-    # Geometric Recall (GR)
-    min_dist, _ = torch.min(dist, dim=1)  # (N,) - 每个pred点到最近clean点的距离
-    within_threshold = torch.sum(min_dist <= THRESHOLD).float()
-    gr = within_threshold / N
+    # Geometric Recall (GR) — 修复版
+    # 使用真实欧氏距离(非平方), dim=0 方向 = 每个 clean 点找最近 pred 点(召回语义)
+    dist_l2 = torch.cdist(pred, clean)                  # (N_pred, N_clean) 真实欧氏距离
+    min_dist_per_clean, _ = torch.min(dist_l2, dim=0)   # (N_clean,)
+    gr = (min_dist_per_clean <= THRESHOLD).float().mean()
 
     return cd.item(), p2p.item(), gr.item()
 
